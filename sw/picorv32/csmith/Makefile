@@ -1,8 +1,9 @@
-RISCV_TOOLS_DIR = /opt/riscv32imc
+RISCV_TOOLS_DIR = /opt/riscv32i
 RISCV_TOOLS_PREFIX = $(RISCV_TOOLS_DIR)/bin/riscv32-unknown-elf-
 CSMITH_INCDIR = $(shell ls -d /usr/local/include/csmith-* | head -n1)
 CC = $(RISCV_TOOLS_PREFIX)gcc
 SHELL = /bin/bash
+VSRC = ../../../src/picorv32.v
 
 help:
 	@echo "Usage: make { loop | verilator | iverilog | spike }"
@@ -44,12 +45,12 @@ riscv-isa-sim/build.ok: riscv-fesvr/build.ok
 	cd riscv-isa-sim && LDFLAGS="-L../riscv-fesvr" ./configure --with-isa=RV32IMC
 	+cd riscv-isa-sim && ln -s ../riscv-fesvr/fesvr . && make && touch build.ok
 
-testbench.vvp: testbench.v ../../picorv32.v
-	iverilog -o testbench.vvp testbench.v ../../picorv32.v
+testbench.vvp: testbench.v $(VSRC)
+	iverilog -o testbench.vvp testbench.v $(VSRC)
 	chmod -x testbench.vvp
 
-obj_dir/Vtestbench: testbench.v testbench.cc ../../picorv32.v
-	verilator --exe -Wno-fatal --cc --top-module testbench testbench.v ../../picorv32.v testbench.cc
+obj_dir/Vtestbench: testbench.v testbench.cc $(VSRC)
+	verilator --exe -Wno-fatal --cc --top-module testbench testbench.v $(VSRC) testbench.cc
 	$(MAKE) -C obj_dir -f Vtestbench.mk
 
 test.hex: test.elf
@@ -60,11 +61,11 @@ start.elf: start.S start.ld
 	chmod -x start.elf
 
 test_ref: test.c
-	gcc -m32 -o test_ref -w -Os -I $(CSMITH_INCDIR) test.c
+	gcc -o test_ref -w -Os -I $(CSMITH_INCDIR) test.c
 
 test.elf: test.c syscalls.c start.S
-	sed -e '/SECTIONS/,+1 s/{/{ . = 0x00000000; .start : { *(.text.start) } application_entry_point = 0x00010000;/;' \
-		$(RISCV_TOOLS_DIR)/riscv32-unknown-elf/lib/riscv.ld > test.ld
+	#sed -e '/SECTIONS/,+1 s/{/{ . = 0x00000000; .start : { *(.text.start) } application_entry_point = 0x00010000;/;' \
+	#	$(RISCV_TOOLS_DIR)/riscv32-unknown-elf/lib/riscv.ld > test.ld
 	$(CC) -o test.elf -w -Os -I $(CSMITH_INCDIR) -T test.ld test.c syscalls.c start.S
 	chmod -x test.elf
 
