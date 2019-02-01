@@ -1,4 +1,4 @@
-RISCV_TOOLS_PREFIX = /opt/riscv32ic/bin/riscv32-unknown-elf-
+RISCV_TOOLS_PREFIX = /opt/riscv32i/bin/riscv32-unknown-elf-
 CXX = $(RISCV_TOOLS_PREFIX)g++
 CC = $(RISCV_TOOLS_PREFIX)gcc
 AS = $(RISCV_TOOLS_PREFIX)gcc
@@ -6,12 +6,13 @@ CXXFLAGS = -MD -Os -Wall -std=c++11
 CCFLAGS = -MD -Os -Wall -std=c++11
 LDFLAGS = -Wl,--gc-sections
 LDLIBS = -lstdc++
+VSRC = ../../../src/picorv32.v
 
 test: testbench.vvp firmware32.hex
 	vvp -N testbench.vvp
 
-testbench.vvp: testbench.v ../../picorv32.v
-	iverilog -o testbench.vvp testbench.v ../../picorv32.v
+testbench.vvp: testbench.v $(VSRC)
+	iverilog -o testbench.vvp testbench.v $(VSRC)
 	chmod -x testbench.vvp
 
 firmware32.hex: firmware.elf start.elf hex8tohex32.py
@@ -22,7 +23,7 @@ firmware32.hex: firmware.elf start.elf hex8tohex32.py
 	rm -f start.tmp firmware.tmp
 
 firmware.elf: firmware.o syscalls.o
-	$(CC) $(LDFLAGS) -o $@ $^ -T ../../firmware/riscv.ld $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $^ -T riscv.ld $(LDLIBS)
 	chmod -x firmware.elf
 
 start.elf: start.S start.ld
