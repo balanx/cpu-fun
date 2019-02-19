@@ -1,5 +1,5 @@
 ifndef RISCV_TOOLS_PREFIX
-RISCV_TOOLS_PREFIX = /opt/riscv32ic/bin/riscv32-unknown-elf-
+RISCV_TOOLS_PREFIX = /opt/riscv32i/bin/riscv32-unknown-elf-
 endif
 CXX = $(RISCV_TOOLS_PREFIX)g++ -march=rv32i
 CC = $(RISCV_TOOLS_PREFIX)gcc -march=rv32i
@@ -9,12 +9,13 @@ CCFLAGS = -MD -Os -Wall
 #LDFLAGS = -Wl,--gc-sections,--no-relax
 LDFLAGS = -Wl,--gc-sections
 LDLIBS =
+VSRC = ../../../src/picorv32.v
 
 test: testbench.vvp firmware32.hex
 	vvp -l testbench.log -N testbench.vvp
 
-testbench.vvp: testbench.v ../../picorv32.v firmware_dbg.v
-	iverilog -o testbench.vvp testbench.v ../../picorv32.v
+testbench.vvp: testbench.v $(VSRC) firmware_dbg.v
+	iverilog -o testbench.vvp testbench.v $(VSRC)
 	chmod -x testbench.vvp
 
 firmware32.hex: firmware.elf hex8tohex32.py
@@ -22,7 +23,7 @@ firmware32.hex: firmware.elf hex8tohex32.py
 	python3 hex8tohex32.py firmware.tmp > firmware32.hex
 
 
-firmware_dbg.v: firmware.map
+firmware_dbg.v: firmware.elf firmware.map
 	python3 map2debug.py
 
 start.o: start.S
